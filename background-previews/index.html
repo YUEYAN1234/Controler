@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Background Preview</title>
+  <style>
+    :root {
+      --text: #e7ebf2;
+      --muted: #91a0b4;
+      --panel: rgba(27, 31, 39, 0.78);
+      --panel-strong: rgba(22, 25, 32, 0.9);
+      --border: rgba(148, 163, 184, 0.22);
+      --accent: #6ea8d7;
+      --accent-2: #6fc7b3;
+      --shadow: 0 28px 90px rgba(0, 0, 0, 0.32);
+      --radius: 8px;
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      overflow: hidden;
+      color: var(--text);
+      background: #171a20;
+    }
+
+    .stage {
+      width: 100vw;
+      height: 100vh;
+      min-width: 1024px;
+      min-height: 640px;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg);
+      background-image: var(--bg-image);
+      background-size: var(--bg-size);
+      background-position: center;
+    }
+
+    .stage::before,
+    .stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .stage::before {
+      background: var(--overlay);
+      opacity: var(--overlay-opacity, 1);
+    }
+
+    .stage::after {
+      background-image: var(--texture);
+      opacity: var(--texture-opacity, 0);
+      mix-blend-mode: soft-light;
+    }
+
+    .dashboard {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 96px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+      padding: 18px 40px 16px;
+      background: var(--topbar);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92) url("../public/logo.png") center / 80% 80% no-repeat;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.26), 0 10px 26px rgba(0, 0, 0, 0.22);
+      flex: 0 0 auto;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 760;
+      color: var(--heading);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab {
+      height: 34px;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 680;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 68%, #ffffff));
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 32%, transparent);
+    }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 24px;
+      padding: 30px 40px 36px;
+      min-height: 0;
+    }
+
+    .panel,
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+    }
+
+    .panel {
+      padding: 22px;
+      min-height: 0;
+    }
+
+    .panel-title,
+    .card-title {
+      color: var(--heading);
+      font-size: 15px;
+      font-weight: 760;
+      margin: 0 0 16px;
+    }
+
+    .stat {
+      height: 84px;
+      padding: 16px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .stat-label {
+      height: 10px;
+      width: 82px;
+      border-radius: 999px;
+      background: var(--muted-line);
+    }
+
+    .stat-value {
+      margin-top: 16px;
+      height: 19px;
+      width: 138px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .content {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+    }
+
+    .hero {
+      height: 152px;
+      padding: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 20px 20px auto;
+      width: 270px;
+      height: 58px;
+      background:
+        linear-gradient(90deg, transparent, var(--accent), transparent) 0 14px / 100% 1px no-repeat,
+        linear-gradient(90deg, transparent, var(--accent-2), transparent) 0 34px / 100% 1px no-repeat;
+      opacity: 0.55;
+    }
+
+    .hero-kicker {
+      height: 11px;
+      width: 130px;
+      border-radius: 999px;
+      background: var(--muted-line);
+    }
+
+    .hero-title {
+      margin-top: 18px;
+      width: 420px;
+      max-width: 58%;
+      height: 28px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--heading), color-mix(in srgb, var(--heading) 38%, transparent));
+    }
+
+    .hero-copy {
+      margin-top: 16px;
+      width: 560px;
+      max-width: 66%;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--muted-line);
+      box-shadow: 0 18px 0 var(--muted-line);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .card {
+      padding: 20px;
+      min-height: 270px;
+    }
+
+    .rows {
+      display: grid;
+      gap: 11px;
+    }
+
+    .row {
+      height: 42px;
+      display: grid;
+      grid-template-columns: 42px 1fr 90px;
+      gap: 14px;
+      align-items: center;
+      padding: 0 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .line {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--muted-line);
+    }
+
+    .line.short {
+      width: 82px;
+      justify-self: end;
+    }
+
+    .chart {
+      height: 190px;
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      padding: 22px 6px 0;
+    }
+
+    .bar {
+      flex: 1;
+      min-width: 0;
+      border-radius: 7px 7px 3px 3px;
+      background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent-2) 70%, transparent));
+      opacity: 0.84;
+    }
+
+    .bar:nth-child(1) { height: 42%; }
+    .bar:nth-child(2) { height: 72%; }
+    .bar:nth-child(3) { height: 50%; }
+    .bar:nth-child(4) { height: 86%; }
+    .bar:nth-child(5) { height: 64%; }
+    .bar:nth-child(6) { height: 76%; }
+    .bar:nth-child(7) { height: 45%; }
+
+    .option-label {
+      position: absolute;
+      z-index: 2;
+      right: 40px;
+      bottom: 26px;
+      color: var(--label);
+      font-size: 13px;
+      font-weight: 740;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--label-bg);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+
+    body.scheme-1 {
+      --bg: #171a20;
+      --bg-image:
+        linear-gradient(rgba(154, 178, 205, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(154, 178, 205, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(110, 168, 215, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(110, 168, 215, 0.08) 1px, transparent 1px);
+      --bg-size: 40px 40px, 40px 40px, 160px 160px, 160px 160px;
+      --overlay: linear-gradient(135deg, rgba(110, 168, 215, 0.12), transparent 38%), linear-gradient(315deg, rgba(111, 199, 179, 0.08), transparent 42%);
+      --texture: none;
+      --topbar: rgba(18, 21, 27, 0.88);
+      --heading: #f1f6fc;
+      --muted-line: rgba(150, 164, 184, 0.22);
+      --label: #c7d8e9;
+      --label-bg: rgba(20, 24, 31, 0.72);
+    }
+
+    body.scheme-2 {
+      --bg: #171916;
+      --bg-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
+      --bg-size: 44px 44px, 44px 44px;
+      --overlay:
+        linear-gradient(125deg, rgba(29, 71, 74, 0.72) 0%, rgba(23, 25, 22, 0.34) 42%, rgba(58, 51, 37, 0.45) 100%),
+        linear-gradient(20deg, rgba(101, 56, 77, 0.2), transparent 54%);
+      --texture:
+        repeating-linear-gradient(112deg, transparent 0 18px, rgba(255, 255, 255, 0.04) 18px 19px, transparent 19px 48px);
+      --texture-opacity: 0.28;
+      --topbar: rgba(19, 23, 22, 0.84);
+      --heading: #f1f5ef;
+      --accent: #75b8d8;
+      --accent-2: #7dd3b8;
+      --muted-line: rgba(196, 208, 205, 0.2);
+      --label: #d6ebe4;
+      --label-bg: rgba(19, 29, 28, 0.68);
+    }
+
+    body.scheme-3 {
+      --bg: #eaf0f6;
+      --text: #263241;
+      --muted: #667689;
+      --panel: rgba(255, 255, 255, 0.76);
+      --topbar: rgba(255, 255, 255, 0.74);
+      --border: rgba(63, 88, 115, 0.16);
+      --shadow: 0 22px 64px rgba(63, 88, 115, 0.12);
+      --bg-image:
+        linear-gradient(rgba(64, 103, 141, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(64, 103, 141, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(64, 103, 141, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(64, 103, 141, 0.12) 1px, transparent 1px);
+      --bg-size: 36px 36px, 36px 36px, 144px 144px, 144px 144px;
+      --overlay: linear-gradient(145deg, rgba(123, 173, 207, 0.28), transparent 46%), linear-gradient(320deg, rgba(161, 185, 126, 0.2), transparent 48%);
+      --texture:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.4) 0 1px, transparent 1px 5px);
+      --texture-opacity: 0.18;
+      --heading: #1d2a39;
+      --accent: #3b82c4;
+      --accent-2: #5aa88f;
+      --muted-line: rgba(66, 86, 108, 0.16);
+      --label: #29405a;
+      --label-bg: rgba(255, 255, 255, 0.72);
+    }
+
+    body.scheme-4 {
+      --bg: #141821;
+      --bg-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      --bg-size: 48px 48px, 48px 48px;
+      --overlay:
+        linear-gradient(90deg, rgba(15, 18, 25, 0.42), rgba(15, 18, 25, 0.78)),
+        linear-gradient(140deg, rgba(110, 168, 215, 0.18), transparent 48%),
+        linear-gradient(25deg, rgba(178, 88, 88, 0.16), transparent 52%);
+      --texture: none;
+      --topbar: rgba(16, 20, 28, 0.72);
+      --heading: #f3f5f8;
+      --accent: #7bb8df;
+      --accent-2: #dd9a7a;
+      --muted-line: rgba(219, 226, 235, 0.2);
+      --label: #f0e2d9;
+      --label-bg: rgba(24, 24, 28, 0.66);
+    }
+
+    body.scheme-4 .stage::before {
+      background:
+        radial-gradient(circle at 23% 50%, rgba(255, 255, 255, 0.075) 0 104px, transparent 106px),
+        var(--overlay);
+    }
+
+    body.scheme-4 .stage::after {
+      opacity: 0.12;
+      mix-blend-mode: normal;
+      background:
+        url("../public/logo.png") 160px 180px / 360px 360px no-repeat,
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent) 20% 62% / 520px 1px no-repeat;
+    }
+
+    body.scheme-5 {
+      --bg: #12171a;
+      --bg-image:
+        repeating-linear-gradient(116deg, transparent 0 28px, rgba(117, 184, 216, 0.075) 28px 29px, transparent 29px 76px),
+        linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+      --bg-size: 360px 240px, 42px 42px, 42px 42px;
+      --overlay:
+        linear-gradient(135deg, rgba(22, 55, 58, 0.58), transparent 52%),
+        linear-gradient(315deg, rgba(69, 48, 85, 0.24), transparent 48%);
+      --texture:
+        repeating-linear-gradient(90deg, transparent 0 70px, rgba(125, 211, 184, 0.055) 70px 72px, transparent 72px 120px);
+      --texture-opacity: 0.44;
+      --topbar: rgba(14, 19, 23, 0.84);
+      --heading: #eef8f6;
+      --accent: #79bbd8;
+      --accent-2: #87d6b8;
+      --muted-line: rgba(190, 207, 211, 0.19);
+      --label: #d7f1ed;
+      --label-bg: rgba(11, 22, 24, 0.68);
+    }
+
+    body.scheme-4 .main {
+      grid-template-columns: 1fr 430px;
+      align-items: center;
+    }
+
+    body.scheme-4 .panel {
+      min-height: 470px;
+      max-width: 560px;
+      background: rgba(22, 26, 34, 0.54);
+    }
+
+    body.scheme-4 .content {
+      order: -1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    body.scheme-4 .hero {
+      width: min(420px, 100%);
+      height: auto;
+      padding: 32px;
+      background: rgba(22, 26, 34, 0.72);
+    }
+
+    body.scheme-4 .hero::after {
+      display: none;
+    }
+
+    body.scheme-4 .hero-title,
+    body.scheme-4 .hero-copy {
+      max-width: 100%;
+      width: 100%;
+    }
+
+    body.scheme-4 .grid {
+      display: none;
+    }
+  </style>
+</head>
+<body class="scheme-1">
+  <div class="stage">
+    <div class="dashboard">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div class="brand-copy">
+            <div class="brand-title">Tianjin University Chem-E-Car Lab Data Platform</div>
+            <div class="brand-subtitle">Experiment data workspace</div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Preview navigation">
+          <span class="tab active">Files</span>
+          <span class="tab">Reservation</span>
+          <span class="tab">Announcements</span>
+          <span class="tab">Conter</span>
+        </nav>
+      </header>
+
+      <main class="main">
+        <aside class="panel">
+          <h2 class="panel-title">Workspace overview</h2>
+          <div class="stat">
+            <div class="stat-label"></div>
+            <div class="stat-value"></div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" style="width: 112px"></div>
+            <div class="stat-value" style="width: 96px"></div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" style="width: 72px"></div>
+            <div class="stat-value" style="width: 152px"></div>
+          </div>
+        </aside>
+
+        <section class="content">
+          <div class="card hero">
+            <div class="hero-kicker"></div>
+            <div class="hero-title"></div>
+            <div class="hero-copy"></div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h2 class="card-title">Recent files</h2>
+              <div class="rows">
+                <div class="row"><div class="dot"></div><div class="line"></div><div class="line short"></div></div>
+                <div class="row"><div class="dot"></div><div class="line" style="width: 78%"></div><div class="line short" style="width: 70px"></div></div>
+                <div class="row"><div class="dot"></div><div class="line" style="width: 62%"></div><div class="line short"></div></div>
+                <div class="row"><div class="dot"></div><div class="line" style="width: 86%"></div><div class="line short" style="width: 56px"></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2 class="card-title">Experiment activity</h2>
+              <div class="chart">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="option-label" id="label">Option 1</div>
+  </div>
+
+  <script>
+    const labels = {
+      "1": "Option 1 / Precision Grid",
+      "2": "Option 2 / Lab Gradient",
+      "3": "Option 3 / Blueprint Light",
+      "4": "Option 4 / Brand Login",
+      "5": "Option 5 / Data Flow"
+    };
+    const params = new URLSearchParams(location.search);
+    const scheme = params.get("scheme") || "1";
+    document.body.className = `scheme-${scheme}`;
+    document.getElementById("label").textContent = labels[scheme] || labels["1"];
+  </script>
+</body>
+</html>
