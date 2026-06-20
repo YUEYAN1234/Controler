@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { changePassword } from '../api';
 import FileManager from '../components/FileManager';
@@ -7,6 +7,8 @@ import Announcements from '../components/Announcements';
 import MessageBoard from '../components/MessageBoard';
 import SnakeGame from '../components/SnakeGame';
 import AiChat from '../components/AiChat';
+
+const DataPlotter = lazy(() => import('../components/DataPlotter'));
 
 function ChangePasswordModal({ onClose }) {
   const [oldPassword, setOldPassword] = useState('');
@@ -130,6 +132,20 @@ function Dashboard() {
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatDoneHint, setChatDoneHint] = useState(false);
+  const [plotterOpened, setPlotterOpened] = useState(false);
+  const [plotterRequest, setPlotterRequest] = useState(null);
+
+  const switchTab = (tab) => {
+    if (tab === 'plotter') setPlotterOpened(true);
+    setActiveTab(tab);
+  };
+
+  const handlePlotFiles = (files) => {
+    if (!files || files.length === 0) return;
+    setPlotterOpened(true);
+    setPlotterRequest({ id: Date.now(), files });
+    setActiveTab('plotter');
+  };
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -150,38 +166,44 @@ function Dashboard() {
           <nav className="topbar-nav">
             <button
               className={`topbar-tab ${activeTab === 'files' ? 'topbar-tab-active' : ''}`}
-              onClick={() => setActiveTab('files')}
+              onClick={() => switchTab('files')}
             >
               文件管理
             </button>
             <button
               className={`topbar-tab ${activeTab === 'reservation' ? 'topbar-tab-active' : ''}`}
-              onClick={() => setActiveTab('reservation')}
+              onClick={() => switchTab('reservation')}
             >
               实验室预约
             </button>
             <button
               className={`topbar-tab ${activeTab === 'announcements' ? 'topbar-tab-active' : ''}`}
-              onClick={() => setActiveTab('announcements')}
+              onClick={() => switchTab('announcements')}
             >
               系统公告
             </button>
             <button
               className={`topbar-tab ${activeTab === 'messages' ? 'topbar-tab-active' : ''}`}
-              onClick={() => setActiveTab('messages')}
+              onClick={() => switchTab('messages')}
             >
               交流板
             </button>
             <button
               className={`topbar-tab ${activeTab === 'games' ? 'topbar-tab-active' : ''}`}
-              onClick={() => setActiveTab('games')}
+              onClick={() => switchTab('games')}
             >
               小游戏
             </button>
             <button
+              className={`topbar-tab ${activeTab === 'plotter' ? 'topbar-tab-active' : ''}`}
+              onClick={() => switchTab('plotter')}
+            >
+              数据绘图
+            </button>
+            <button
               className={`topbar-tab topbar-tab-chat ${activeTab === 'chat' ? 'topbar-tab-active' : ''} ${chatBusy ? 'topbar-tab-busy' : ''} ${chatDoneHint && activeTab !== 'chat' ? 'topbar-tab-done' : ''}`}
               onClick={() => {
-                setActiveTab('chat');
+                switchTab('chat');
                 setChatDoneHint(false);
               }}
             >
@@ -218,13 +240,20 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="main-content">
-        <div className={`page-transition ${activeTab === 'chat' ? 'page-hidden' : ''}`} key={activeTab === 'chat' ? 'content-hidden' : activeTab}>
-          {activeTab === 'files' && <FileManager />}
+      <main className={`main-content ${activeTab === 'plotter' ? 'main-content-plotter' : ''}`}>
+        <div className={`page-transition ${activeTab === 'chat' || activeTab === 'plotter' ? 'page-hidden' : ''}`} key={activeTab === 'chat' || activeTab === 'plotter' ? 'content-hidden' : activeTab}>
+          {activeTab === 'files' && <FileManager onPlotFiles={handlePlotFiles} />}
           {activeTab === 'reservation' && <LabReservation />}
           {activeTab === 'announcements' && <Announcements />}
           {activeTab === 'messages' && <MessageBoard />}
           {activeTab === 'games' && <SnakeGame />}
+        </div>
+        <div className={activeTab === 'plotter' ? 'page-transition' : 'page-hidden'}>
+          {plotterOpened && (
+            <Suspense fallback={<div className="full-center-loading"><div className="spinner"></div></div>}>
+              <DataPlotter fileRequest={plotterRequest} />
+            </Suspense>
+          )}
         </div>
         <div className={activeTab === 'chat' ? 'page-transition' : 'page-hidden'}>
           <AiChat

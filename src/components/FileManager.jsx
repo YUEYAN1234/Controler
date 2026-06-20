@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getFolders, getFiles, createFolder, deleteFolder, renameFolder, uploadFiles, deleteFile, getDownloadUrl, getPreviewUrl, batchDownload, moveFile, moveFolder, reorderFiles, searchFiles } from '../api';
 import { useAuth } from '../AuthContext';
+import { FaChartLine, FaDownload } from 'react-icons/fa';
 import FileComments from './FileComments';
 import FilePreview from './FilePreview';
 
-function FileManager() {
+const EXCEL_EXTENSIONS = new Set(['xlsx', 'xls']);
+
+function isExcelFile(file) {
+  const ext = file.original_name?.split('.').pop()?.toLowerCase();
+  return EXCEL_EXTENSIONS.has(ext);
+}
+
+function FileManager({ onPlotFiles }) {
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null);
@@ -226,6 +234,17 @@ function FileManager() {
     setSelectedFiles(new Set());
   };
 
+  const handlePlotFiles = (targetFiles) => {
+    const excelFiles = targetFiles.filter(isExcelFile);
+    if (excelFiles.length === 0) {
+      alert('请选择 Excel 文件后再作图');
+      return;
+    }
+    onPlotFiles?.(excelFiles);
+    setSelectedFiles(new Set());
+    setSelectMode(false);
+  };
+
   const openFilePreview = (file) => {
     const ext = file.original_name?.split('.').pop()?.toLowerCase();
     if (ext === 'html' || ext === 'htm') {
@@ -438,6 +457,7 @@ function FileManager() {
   const breadcrumbs = getBreadcrumbs();
   const isSearching = searchQuery.trim().length > 0;
   const activeTeamName = activeTeam === 'power' ? '动力组' : '控制组';
+  const selectedExcelFiles = files.filter(file => selectedFiles.has(file.id) && isExcelFile(file));
 
   return (
     <div>
@@ -514,11 +534,22 @@ function FileManager() {
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button
               className="btn btn-primary"
+              onClick={() => handlePlotFiles(selectedExcelFiles)}
+              disabled={selectedExcelFiles.length === 0}
+              style={{ fontSize: '0.85rem' }}
+              title={selectedExcelFiles.length === 0 ? '请选择 Excel 文件' : '将选中的 Excel 文件加入数据绘图'}
+            >
+              <FaChartLine aria-hidden="true" />
+              作图 ({selectedExcelFiles.length})
+            </button>
+            <button
+              className="btn btn-primary"
               onClick={handleBatchDownload}
               disabled={selectedFiles.size === 0 || batchDownloading}
               style={{ fontSize: '0.85rem' }}
             >
-              {batchDownloading ? '打包中...' : `📦 批量下载 (${selectedFiles.size})`}
+              {!batchDownloading && <FaDownload aria-hidden="true" />}
+              {batchDownloading ? '打包中...' : `批量下载 (${selectedFiles.size})`}
             </button>
             <button className="btn btn-ghost" onClick={exitSelectMode} style={{ fontSize: '0.85rem' }}>
               取消
@@ -554,6 +585,12 @@ function FileManager() {
                 <button className="btn btn-ghost" onClick={() => openSearchResultFolder(file)}>定位</button>
                 <button className="btn btn-ghost" onClick={() => openFilePreview(file)}>预览</button>
                 <a className="btn btn-ghost" href={getDownloadUrl(file.id)} download={file.original_name}>下载</a>
+                {isExcelFile(file) && (
+                  <button className="btn btn-ghost" onClick={() => handlePlotFiles([file])} title="加入数据绘图">
+                    <FaChartLine aria-hidden="true" />
+                    作图
+                  </button>
+                )}
                 <button className="btn btn-ghost" onClick={() => setActiveCommentFile(file)}>记录</button>
               </div>
             </div>
@@ -701,6 +738,12 @@ function FileManager() {
                     }
                   }}>预览</button>
                   <a className="btn btn-ghost" href={getDownloadUrl(file.id)} download={file.original_name}>下载</a>
+                  {isExcelFile(file) && (
+                    <button className="btn btn-ghost" onClick={() => handlePlotFiles([file])} title="加入数据绘图">
+                      <FaChartLine aria-hidden="true" />
+                      作图
+                    </button>
+                  )}
                   <button className="btn btn-ghost" onClick={() => setActiveCommentFile(file)}>记录</button>
                   {(user.role === 'admin' || user.id === file.uploaded_by) && (
                     <button className="btn btn-danger" onClick={() => handleDeleteFile(file.id)}>删除</button>
