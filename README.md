@@ -1,6 +1,6 @@
 # Tianjin University Chem-E-Car Experimental Data Platform
 
-This is an internal experimental data collaboration platform for the Tianjin University Chem-E-Car team. It supports file archiving, lab reservations, announcements, team discussion, AI-assisted Q&A, and game leaderboards for both the Control Group and the Power Group. The project uses a React + Vite frontend, an Express backend, and a local SQLite database file powered by `sql.js`, so it can run without a separate database service.
+This is an internal experimental data collaboration platform for the Tianjin University Chem-E-Car team. It supports file archiving, Excel data plotting, lab reservations, announcements, team discussion, AI-assisted Q&A, and game leaderboards for both the Control Group and the Power Group. The project uses a React + Vite frontend, an Express backend, and a local SQLite database file powered by `sql.js`, so it can run without a separate database service.
 
 ## Features
 
@@ -20,6 +20,18 @@ This is an internal experimental data collaboration platform for the Tianjin Uni
 - In-browser preview for images, PDF, Word, Excel, CSV, text, and code files.
 - Excel preview parses sheets and attempts to extract embedded charts or images.
 - Each file has its own record/comment area for experiment parameters, issues, and feedback.
+- Excel files can be sent directly into the Data Plotting workspace from single-file actions or batch selection.
+
+### Data Plotting
+
+- Dedicated Data Plotting tab for `.xlsx` and `.xls` experiment files.
+- Supports adding multiple Excel files to one plotting page and comparing their curves together.
+- Keeps loaded data, page tabs, grouping, and plotted charts mounted when switching to other platform features and back.
+- Automatically detects data groups from columns whose headers include `time`.
+- Manual column configuration is available when files use non-standard X/Y column names or layouts.
+- Supports metric switching for `R`, `G`, `B`, `Sum`, and `AvgSum`.
+- Provides condition grouping, group colors, trace assignment, draggable Plotly legend positioning, and a legend show/hide control to avoid covering the chart.
+- Uses responsive, theme-aware Plotly rendering with light and dark mode support, range slider navigation, group filtering, hover inspection, and PNG export.
 
 ### Lab Reservations
 
@@ -54,7 +66,7 @@ This is an internal experimental data collaboration platform for the Tianjin Uni
 
 | Layer | Technologies |
 | --- | --- |
-| Frontend | Vite 8, React 19, React Router 7, Vanilla CSS, Chart.js, SheetJS, Mammoth |
+| Frontend | Vite 8, React 19, React Router 7, Vanilla CSS, Plotly, Chart.js, SheetJS, Mammoth |
 | Backend | Node.js, Express 5, JWT, bcryptjs, multer, archiver |
 | Data | `sql.js` persisted to a local `data.db` file |
 | AI and Parsing | DeepSeek API, pdf-parse, mammoth, word-extractor, xlsx, tesseract.js |
@@ -167,6 +179,7 @@ Controler/
 |       |-- FileManager.jsx          # File management
 |       |-- FilePreview.jsx          # File preview
 |       |-- FileComments.jsx         # File records
+|       |-- DataPlotter.jsx          # Multi-file Excel data plotting
 |       |-- LabReservation.jsx       # Lab reservation calendar
 |       |-- Announcements.jsx        # System announcements
 |       |-- MessageBoard.jsx         # Message board
